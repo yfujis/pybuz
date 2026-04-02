@@ -59,4 +59,4 @@ spikes.set_info(cell_metrics_df)
 
 ## Contact
 
-yfujishima1001@gmail.com (or open an issue here).
+yfujishima1001[AT]gmail.com (or open an issue here).
