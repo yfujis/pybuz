@@ -1,5 +1,7 @@
 # pybuz
-Libarary to interact with Buzlab format.
+Libarary to interact with [buzcode] format.
+
+[buzcode]: https://github.com/buzsakilab/buzcode
 
 
 ## Getting started
