@@ -10,6 +10,7 @@ import logging, h5py
 from pathlib import Path
 from numpy import ndarray
 import numpy as np
+import pandas as pd
 from scipy.io import loadmat
 from types import SimpleNamespace
 
@@ -691,3 +692,32 @@ def read_chanCoords_channelinfo(basepath: Path) -> PrettyNamespace:
     basepath = Path(basepath)
     file_path = basepath / f"{basepath.stem}.chanCoords.channelinfo.mat"
     return MatObject(file_path).chanCoords
+
+
+def read_spikes_as_TsGroup(basepath, load_metadata=True) -> nap.TsGroup:
+    """Convenience function to read spikes from cellinfo and return as a nap.TsGroup."""
+    spikes_cellinfo = read_spikes_cellinfo(basepath)
+    cell_metrics = read_cellmetrics_cellinfo(basepath)
+
+    spikes = nap.TsGroup({pos: times for pos, times in enumerate(spikes_cellinfo.times)})
+    if load_metadata:
+        # Add metadata from spikes_cellinfo and cell_metrics to the spikes object
+        metadata_dict = {}
+        for key in spikes_cellinfo.__dict__.keys():
+            if key != '_fieldnames':
+                # metadata[key] = spikes_cellinfo.__dict__[key]
+                # check if iterable
+                if hasattr(spikes_cellinfo.__dict__[key], '__iter__') and not isinstance(spikes_cellinfo.__dict__[key], str):
+                    # check if the elements are iterable
+                    if not (hasattr(spikes_cellinfo.__dict__[key][0], '__iter__') and not isinstance(spikes_cellinfo.__dict__[key][0], str)):
+                        metadata_dict[key] = getattr(spikes_cellinfo, key)
+
+        for key in cell_metrics.__dict__.keys():
+            if key != '_fieldnames':
+                # check if iterable
+                if hasattr(cell_metrics.__dict__[key], '__iter__') and not isinstance(cell_metrics.__dict__[key], str):
+                    # check if the elements are iterable
+                    if not (hasattr(cell_metrics.__dict__[key][0], '__iter__') and not isinstance(cell_metrics.__dict__[key][0], str)):
+                        metadata_dict[key] = getattr(cell_metrics, key)
+        spikes.set_info(pd.DataFrame(metadata_dict))
+    return spikes
