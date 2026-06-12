@@ -12,6 +12,7 @@ from numpy import ndarray
 import numpy as np
 import pandas as pd
 from scipy.io import loadmat
+import scipy
 from types import SimpleNamespace
 
 from dataclasses import dataclass, asdict
@@ -726,13 +727,31 @@ def read_spikes_as_TsGroup(basepath, load_metadata=True) -> nap.TsGroup:
 def add_cell_metrics_to_spikes(spikes: nap.TsGroup, basepath: Path) -> nap.TsGroup:
     """Add cell metrics from cellinfo to an existing nap.TsGroup of spikes."""
     cell_metrics = read_cellmetrics_cellinfo(basepath)
-    metadata_dict = {}
-    for key in cell_metrics.__dict__.keys():
-        if key != '_fieldnames':
-            # check if iterable
-            if hasattr(cell_metrics.__dict__[key], '__iter__') and not isinstance(cell_metrics.__dict__[key], str):
-                # check if the elements are iterable
-                if not (hasattr(cell_metrics.__dict__[key][0], '__iter__') and not isinstance(cell_metrics.__dict__[key][0], str)):
-                    metadata_dict[key] = getattr(cell_metrics, key)
-    spikes.set_info(pd.DataFrame(metadata_dict))
+    df = pd.DataFrame(cell_metrics.cluID, columns=['id'])
+
+    for key, val in cell_metrics.__dict__.items():
+        if isinstance(val, scipy.io.matlab._mio5_params.mat_struct):
+            continue
+        try:
+            if len(val) == len(df):
+                df[key] = np.asarray(val)
+        except TypeError:
+            # Skip scalar or non-sized entries.
+            continue
+
+    metadata_ = spikes.metadata.copy()
+    if 'id' not in metadata_.columns:
+        metadata_ = metadata_.reset_index().rename(columns={'index': 'id'})
+
+    metadata_ = metadata_.set_index('id')
+    df_ = df.drop_duplicates(subset='id').set_index('id')
+
+    for col in df_.columns:
+        if col != 'id':
+            metadata_[col] = df_[col].reindex(metadata_.index)
+
+    if 'rate' in metadata_.columns:
+        metadata_.drop(columns=['rate'], inplace=True)
+    metadata_ = metadata_.reset_index()
+    spikes.set_info(metadata_)
     return spikes
