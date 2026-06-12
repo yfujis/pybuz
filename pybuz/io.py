@@ -721,3 +721,18 @@ def read_spikes_as_TsGroup(basepath, load_metadata=True) -> nap.TsGroup:
                         metadata_dict[key] = getattr(cell_metrics, key)
         spikes.set_info(pd.DataFrame(metadata_dict))
     return spikes
+
+
+def add_cell_metrics_to_spikes(spikes: nap.TsGroup, basepath: Path) -> nap.TsGroup:
+    """Add cell metrics from cellinfo to an existing nap.TsGroup of spikes."""
+    cell_metrics = read_cellmetrics_cellinfo(basepath)
+    metadata_dict = {}
+    for key in cell_metrics.__dict__.keys():
+        if key != '_fieldnames':
+            # check if iterable
+            if hasattr(cell_metrics.__dict__[key], '__iter__') and not isinstance(cell_metrics.__dict__[key], str):
+                # check if the elements are iterable
+                if not (hasattr(cell_metrics.__dict__[key][0], '__iter__') and not isinstance(cell_metrics.__dict__[key][0], str)):
+                    metadata_dict[key] = getattr(cell_metrics, key)
+    spikes.set_info(pd.DataFrame(metadata_dict))
+    return spikes
