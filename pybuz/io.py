@@ -695,12 +695,16 @@ def read_chanCoords_channelinfo(basepath: Path) -> PrettyNamespace:
     return MatObject(file_path).chanCoords
 
 
-def read_spikes_as_TsGroup(basepath, load_metadata=True) -> nap.TsGroup:
+def read_spikes_as_TsGroup(basepath, load_metadata=True, sort_by_num_spikes=True) -> nap.TsGroup:
     """Convenience function to read spikes from cellinfo and return as a nap.TsGroup."""
     spikes_cellinfo = read_spikes_cellinfo(basepath)
     cell_metrics = read_cellmetrics_cellinfo(basepath)
 
-    spikes = nap.TsGroup({pos: times for pos, times in enumerate(spikes_cellinfo.times)})
+    if sort_by_num_spikes:
+        indices = np.argsort([len(times) for pos, times in enumerate(spikes_cellinfo.times)])[::-1]
+    else:
+        indices = np.arange(len(spikes_cellinfo.times))
+    spikes = nap.TsGroup({pos: spikes_cellinfo.times[ii] for pos, ii in enumerate(indices)})
     if load_metadata:
         # Add metadata from spikes_cellinfo and cell_metrics to the spikes object
         metadata_dict = {}
@@ -720,7 +724,8 @@ def read_spikes_as_TsGroup(basepath, load_metadata=True) -> nap.TsGroup:
                     # check if the elements are iterable
                     if not (hasattr(cell_metrics.__dict__[key][0], '__iter__') and not isinstance(cell_metrics.__dict__[key][0], str)):
                         metadata_dict[key] = getattr(cell_metrics, key)
-        spikes.set_info(pd.DataFrame(metadata_dict))
+        metadata_df = pd.DataFrame(metadata_dict)
+        spikes.set_info(metadata_df.loc[indices].reset_index(drop=True))
     return spikes
 
 
