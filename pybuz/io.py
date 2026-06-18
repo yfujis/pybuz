@@ -699,7 +699,6 @@ def read_spikes_as_TsGroup(basepath, load_metadata=True, sort_by_num_spikes=True
     """Convenience function to read spikes from cellinfo and return as a nap.TsGroup."""
     spikes_cellinfo = read_spikes_cellinfo(basepath)
     cell_metrics = read_cellmetrics_cellinfo(basepath)
-
     if sort_by_num_spikes:
         indices = np.argsort([len(times) for pos, times in enumerate(spikes_cellinfo.times)])[::-1]
     else:
