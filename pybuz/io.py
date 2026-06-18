@@ -704,7 +704,7 @@ def read_spikes_as_TsGroup(basepath, load_metadata=True, sort_by_num_spikes=True
         indices = np.argsort([len(times) for pos, times in enumerate(spikes_cellinfo.times)])[::-1]
     else:
         indices = np.arange(len(spikes_cellinfo.times))
-    spikes = nap.TsGroup({pos: spikes_cellinfo.times[ii] for pos, ii in enumerate(indices)})
+    spikes = nap.TsGroup({pos: nap.Ts(spikes_cellinfo.times[ii]) for pos, ii in enumerate(indices)})
     if load_metadata:
         # Add metadata from spikes_cellinfo and cell_metrics to the spikes object
         metadata_dict = {}
