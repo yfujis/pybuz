@@ -724,7 +724,9 @@ def read_spikes_as_TsGroup(basepath, load_metadata=True, sort_by_num_spikes=True
                     if not (hasattr(cell_metrics.__dict__[key][0], '__iter__') and not isinstance(cell_metrics.__dict__[key][0], str)):
                         metadata_dict[key] = getattr(cell_metrics, key)
         metadata_df = pd.DataFrame(metadata_dict)
-        spikes.set_info(metadata_df.loc[indices].reset_index(drop=True))
+    else:
+        metadata_df = pd.DataFrame(spikes_cellinfo.cluID, columns=['id'])
+    spikes.set_info(metadata_df.loc[indices].reset_index(drop=True))
     return spikes
 
 
